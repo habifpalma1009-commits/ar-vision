@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR VISION ELITE V12 - FINAL</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;800&family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+  
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  
+  <style>
+    :root { --neon: #ff0055; --cyan: #00f2ff; --glass: rgba(0, 0, 0, 0.85); }
+    body { margin: 0; overflow: hidden; font-family: 'Poppins', sans-serif; background-color: #000; }
+    
+    /* PANTALLA DE INICIO */
+    #pantalla-inicio {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+      z-index: 2000; display: flex; justify-content: center; align-items: center; 
+      flex-direction: column; transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .bg-dots {
+      position: absolute; width: 100%; height: 100%;
+      background-image: radial-gradient(circle, #fff 1px, transparent 1px);
+      background-size: 40px 40px; opacity: 0.15; animation: moveBg 30s linear infinite;
+    }
+    @keyframes moveBg { from { background-position: 0 0; } to { background-position: 100% 100%; } }
+
+    .titulo-app { 
+      font-family: 'Orbitron', sans-serif; color: #fff; font-size: clamp(28px, 10vw, 48px); 
+      font-weight: 900; letter-spacing: 8px; text-shadow: 0 0 30px var(--neon);
+      text-align: center; margin-bottom: 50px;
+    }
+
+    #boton-empezar {
+      padding: 22px 60px; font-size: 14px; font-family: 'Orbitron', sans-serif;
+      font-weight: 900; color: #fff; background: transparent;
+      border: 2px solid var(--neon); cursor: pointer; position: relative;
+      box-shadow: 0 0 20px var(--neon); transition: 0.4s; letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    #boton-empezar:hover { background: var(--neon); box-shadow: 0 0 50px var(--neon); transform: scale(1.05); }
+
+    /* MARCO DE ESCANEO */
+    #marco-escaner {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 280px; height: 400px; z-index: 100; display: none;
+      border: 1px solid rgba(0, 242, 255, 0.1);
+    }
+    
+    .esquina {
+      position: absolute; width: 25px; height: 25px; border: 3px solid var(--cyan);
+      box-shadow: 0 0 15px var(--cyan);
+    }
+    .t-l { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+    .b-r { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+
+    .linea-laser {
+      position: absolute; width: 100%; height: 3px; background: var(--cyan);
+      box-shadow: 0 0 20px var(--cyan); animation: scan 4s infinite ease-in-out;
+    }
+    @keyframes scan { 0%, 100% { top: 0; opacity: 0.5; } 50% { top: 100%; opacity: 1; } }
+
+    /* UI DE ESTADO */
+    #ui-flotante {
+      position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%);
+      z-index: 100; background: var(--glass); color: var(--cyan);
+      padding: 15px 30px; border-radius: 2px; display: none;
+      border-left: 4px solid var(--neon); backdrop-filter: blur(10px);
+      font-size: 11px; letter-spacing: 4px; font-family: 'Orbitron', sans-serif;
+    }
+
+    /* BOTÓN PLAY (CORRECCIÓN DE REPRODUCCIÓN) */
+    #btn-play-trigger {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 500; background: var(--glass); color: #fff;
+      padding: 25px 45px; border: 2px solid var(--cyan); border-radius: 50px;
+      font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 16px; 
+      letter-spacing: 3px; cursor: pointer; display: none; 
+      box-shadow: 0 0 40px var(--cyan); text-transform: uppercase;
+      transition: 0.3s;
+    }
+    #btn-play-trigger:hover { background: var(--cyan); color: #000; transform: translate(-50%, -50%) scale(1.1); }
+  </style>
+</head>
+<body>
+
+<div id="pantalla-inicio">
+  <div class="bg-dots"></div>
+  <div class="titulo-app">AR VISION</div>
+  <p style="color: var(--cyan); letter-spacing: 5px; font-size: 10px; margin-bottom: 50px; opacity: 0.8;">LINK: READY TO CONNECT</p>
+  <button id="boton-empezar">INICIAR SISTEMA</button>
+</div>
+
+<div id="ui-flotante">ESCANEANDO OBJETIVO...</div>
+
+<div id="marco-escaner">
+  <div class="esquina t-l"></div>
+  <div class="esquina b-r"></div>
+  <div class="linea-laser"></div>
+</div>
+
+<button id="btn-play-trigger">▶ REPRODUCIR</button>
+
+<a-scene 
+  mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
+  embedded renderer="colorManagement: true; alpha: true; antialias: true;" vr-mode-ui="enabled: false">
+
+  <a-assets>
+    <!-- Tu video obra.mp4 (720x1280) -->
+    <video id="videoObra" src="./obra.mp4" 
+           preload="auto" loop="true" 
+           crossorigin="anonymous" 
+           playsinline webkit-playsinline>
+    </video>
+  </a-assets>
+
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+  <a-entity id="targetAR" mindar-image-target="targetIndex: 0">
+    <!-- height 1.77 para video vertical. position 0.1 para que flote sobre el cuadro -->
+    <a-video id="ar-video-display" src="#videoObra" 
+             position="0 0 0.1" 
+             width="1" height="1.77" 
+             visible="false">
+    </a-video>
+  </a-entity>
+</a-scene>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const sceneEl = document.querySelector('a-scene');
+  const video = document.querySelector("#videoObra");
+  const videoDisplay = document.querySelector("#ar-video-display");
+  const target = document.querySelector("#targetAR");
+  const btnStart = document.querySelector("#boton-empezar");
+  const screenStart = document.querySelector("#pantalla-inicio");
+  const btnPlay = document.querySelector("#btn-play-trigger");
+  const marco = document.querySelector("#marco-escaner");
+  const info = document.querySelector("#ui-flotante");
+
+  // Al presionar INICIAR SISTEMA
+  btnStart.addEventListener("click", async () => {
+    btnStart.disabled = true;
+    btnStart.innerText = "CONECTANDO...";
+
+    try {
+      await sceneEl.systems['mindar-image-system'].start();
+      
+      screenStart.style.opacity = "0";
+      setTimeout(() => {
+        screenStart.style.display = "none";
+        info.style.display = "block";
+        marco.style.display = "block";
+      }, 1000);
+
+      // Desbloqueo inicial silencioso (truco para Safari/Chrome)
+      video.play().then(() => video.pause());
+      
+    } catch (err) {
+      alert("ERROR: ACCESO A CÁMARA DENEGADO");
+      btnStart.disabled = false;
+      btnStart.innerText = "REINTENTAR";
+    }
+  });
+
+  // CUANDO DETECTA EL CUADRO
+  target.addEventListener("targetFound", () => {
+    info.style.display = "none";
+    marco.style.display = "none";
+    
+    // Mostramos el botón de Play grande para activar el video
+    btnPlay.style.display = "block";
+  });
+
+  // CUANDO EL USUARIO PULSA PLAY (ESTO ES LO QUE HACE QUE EL VIDEO APAREZCA)
+  btnPlay.addEventListener("click", () => {
+    btnPlay.style.display = "none";
+    videoDisplay.setAttribute("visible", "true");
+    video.play();
+  });
+
+  // CUANDO SE PIERDE EL CUADRO
+  target.addEventListener("targetLost", () => {
+    video.pause();
+    videoDisplay.setAttribute("visible", "false");
+    btnPlay.style.display = "none";
+    info.style.display = "block";
+    marco.style.display = "block";
+  });
+});
+</script>
+</body>
+</html>
